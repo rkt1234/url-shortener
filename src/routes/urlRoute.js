@@ -2,6 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const auth = require('../middleware/auth');
 const { shortenUrl, redirectToOriginal } = require('../controllers/urlController');
+const { getUrlAnalytics } = require('../controllers/analytics');
 
 const router = express.Router();
 
@@ -17,5 +18,8 @@ router.post('/',
   ],
   shortenUrl
 );
+
+router.get('/urls/:id/analytics', auth, getUrlAnalytics);
+
 
 module.exports = router;

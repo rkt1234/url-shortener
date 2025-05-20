@@ -12,6 +12,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -21,12 +22,22 @@ model User {
 }
 
 model Url {
-  id         String   @id @default(uuid())
+  id          String    @id @default(uuid())
   originalUrl String
-  shortCode   String   @unique
-  user        User     @relation(fields: [userId], references: [id])
+  shortCode   String    @unique
+  user        User      @relation(fields: [userId], references: [id])
   userId      String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   expiresAt   DateTime?
-  clickCount  Int      @default(0)
+  clickCount  Int       @default(0)
+  Click       Click[]
+}
+
+model Click {
+  id        String   @id @default(uuid())
+  url       Url      @relation(fields: [urlId], references: [id])
+  urlId     String
+  timestamp DateTime @default(now())
+  ipAddress String
+  userAgent String
 }
