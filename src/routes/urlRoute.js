@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const auth = require('../middleware/auth');
 const { shortenUrl, redirectToOriginal } = require('../controllers/urlController');
-const { getUrlAnalytics } = require('../controllers/analytics');
+const { getUrlAnalytics } = require('../controllers/analyticsController');
 
 const router = express.Router();
 
