@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { validationResult } = require('express-validator');
 const generateShortCode = require('../utils/shortCode');
-
+const redis = require('../utils/redisClient');
 const prisma = new PrismaClient();
 
 exports.shortenUrl = async (req, res) => {
@@ -36,37 +36,49 @@ exports.shortenUrl = async (req, res) => {
     }
 };
 
+
 exports.redirectToOriginal = async (req, res) => {
     const { shortCode } = req.params;
-
+  
     try {
-        const url = await prisma.url.findUnique({ where: { shortCode } });
-        if (!url) return res.status(404).json({ message: 'URL not found' });
-
-        if (url.expiresAt && new Date(url.expiresAt) < new Date())
-            return res.status(410).json({ message: 'URL has expired' });
-
-        await prisma.url.update({
-            where: { shortCode },
-            data: { clickCount: { increment: 1 } },
-        });
-
-        const userAgent = req.get('User-Agent') || 'unknown';
-        const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
+      // Try Redis first
+      const cached = await redis.get(shortCode);
+      if (cached) {
+        await prisma.url.update({ where: { shortCode }, data: { clickCount: { increment: 1 } } });
         await prisma.click.create({
-            data: {
-                urlId: url.id,
-                ipAddress: ip,
-                userAgent,
-            },
+          data: {
+            urlId: JSON.parse(cached).id,
+            ipAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+            userAgent: req.get('User-Agent') || 'unknown',
+          },
         });
-
-        res.redirect(url.originalUrl);
+        return res.redirect(JSON.parse(cached).originalUrl);
+      }
+  
+      // Fallback to DB
+      const url = await prisma.url.findUnique({ where: { shortCode } });
+      if (!url) return res.status(404).json({ message: 'URL not found' });
+  
+      if (url.expiresAt && new Date(url.expiresAt) < new Date())
+        return res.status(410).json({ message: 'URL expired' });
+  
+      await redis.setEx(shortCode, 60 * 60, JSON.stringify({ id: url.id, originalUrl: url.originalUrl }));
+  
+      await prisma.url.update({ where: { shortCode }, data: { clickCount: { increment: 1 } } });
+  
+      await prisma.click.create({
+        data: {
+          urlId: url.id,
+          ipAddress: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+          userAgent: req.get('User-Agent') || 'unknown',
+        },
+      });
+  
+      res.redirect(url.originalUrl);
     } catch (err) {
-        res.status(500).json({ error: 'Redirection failed' });
+      res.status(500).json({ error: 'Redirection failed' });
     }
-};
+  };
 
 exports.getUserUrls = async (req, res) => {
     const { userId } = req.user;

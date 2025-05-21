@@ -4,14 +4,17 @@ const auth = require('../middleware/auth');
 const { shortenUrl, redirectToOriginal } = require('../controllers/urlController');
 const { getUrlAnalytics } = require('../controllers/analyticsController');
 const { getUserUrls, getUrlById, updateUrl, deleteUrl, } = require('../controllers/urlController');
+const shortenLimiter = require('../middleware/rateLimit');
 
 const router = express.Router();
 
 // Public route for redirection
 router.get('/:shortCode', redirectToOriginal);
 // Protected route for shortening
-router.post('/',
+router.post(
+  '/',
   auth,
+  shortenLimiter,
   [
     body('originalUrl').isURL(),
     body('customCode').optional().isAlphanumeric(),
