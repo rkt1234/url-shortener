@@ -3,7 +3,6 @@ const { signup, login } = require('../controllers/authController');
 const { body } = require('express-validator');
 
 const router = express.Router();
-console.log("here it is coming`")
 router.post('/signup', [
   body('email').isEmail(),
   body('password').isLength({ min: 6 }),

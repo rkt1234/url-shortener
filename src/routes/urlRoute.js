@@ -30,5 +30,6 @@ router.get('/urls/:id', auth, getUrlById);
 router.patch('/urls/:id', auth, updateUrl);
 router.delete('/urls/:id', auth, deleteUrl);
 
+router.get('', () => {resizeBy.send("Hello")})
 
 module.exports = router;
