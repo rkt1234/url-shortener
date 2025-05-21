@@ -11,6 +11,7 @@ exports.signup = async (req, res) => {
 
   const { email, password } = req.body;
   try {
+    console.log("++++++++++++++++++++++++++++")
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(409).json({ message: 'Email already exists' });
 
@@ -22,6 +23,7 @@ exports.signup = async (req, res) => {
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     res.status(201).json({ token });
   } catch (err) {
+    console.log('--------------------------')
     res.status(500).json({ error: 'Signup failed' });
   }
 };

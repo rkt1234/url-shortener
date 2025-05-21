@@ -67,3 +67,78 @@ exports.redirectToOriginal = async (req, res) => {
         res.status(500).json({ error: 'Redirection failed' });
     }
 };
+
+exports.getUserUrls = async (req, res) => {
+    const { userId } = req.user;
+    const { status } = req.query; // "active" or "expired"
+
+    const now = new Date();
+
+    const whereClause = {
+        userId,
+        ...(status === 'active' && { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }),
+        ...(status === 'expired' && { expiresAt: { lt: now } }),
+    };
+
+    try {
+        const urls = await prisma.url.findMany({
+            where: whereClause,
+            orderBy: { createdAt: 'desc' },
+        });
+        res.json(urls);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch URLs' });
+    }
+};
+
+exports.getUrlById = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        const url = await prisma.url.findUnique({ where: { id } });
+        if (!url || url.userId !== userId) return res.status(404).json({ message: 'URL not found' });
+        res.json(url);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to retrieve URL' });
+    }
+};
+
+exports.updateUrl = async (req, res) => {
+    const { id } = req.params;
+    const { originalUrl, expiresAt } = req.body;
+    const userId = req.user.userId;
+
+    try {
+        const url = await prisma.url.findUnique({ where: { id } });
+        if (!url || url.userId !== userId) return res.status(404).json({ message: 'URL not found' });
+
+        const updated = await prisma.url.update({
+            where: { id },
+            data: {
+                ...(originalUrl && { originalUrl }),
+                ...(expiresAt && { expiresAt: new Date(expiresAt) }),
+            },
+        });
+
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to update URL' });
+    }
+};
+
+exports.deleteUrl = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    try {
+        const url = await prisma.url.findUnique({ where: { id } });
+        if (!url || url.userId !== userId) return res.status(404).json({ message: 'URL not found' });
+
+        await prisma.url.delete({ where: { id } });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to delete URL' });
+    }
+};
+

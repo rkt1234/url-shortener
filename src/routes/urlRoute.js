@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const auth = require('../middleware/auth');
 const { shortenUrl, redirectToOriginal } = require('../controllers/urlController');
 const { getUrlAnalytics } = require('../controllers/analyticsController');
+const { getUserUrls, getUrlById, updateUrl, deleteUrl, } = require('../controllers/urlController');
 
 const router = express.Router();
 
@@ -20,6 +21,11 @@ router.post('/',
 );
 
 router.get('/urls/:id/analytics', auth, getUrlAnalytics);
+
+router.get('/urls', auth, getUserUrls);
+router.get('/urls/:id', auth, getUrlById);
+router.patch('/urls/:id', auth, updateUrl);
+router.delete('/urls/:id', auth, deleteUrl);
 
 
 module.exports = router;
