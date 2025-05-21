@@ -9,7 +9,7 @@ const shortenLimiter = require('../middleware/rateLimit');
 const router = express.Router();
 
 // Public route for redirection
-router.get('/:shortCode', redirectToOriginal);
+router.get('/redirect/:shortCode', redirectToOriginal);
 // Protected route for shortening
 router.post(
   '/',

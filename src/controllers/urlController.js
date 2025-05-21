@@ -38,8 +38,9 @@ exports.shortenUrl = async (req, res) => {
 
 
 exports.redirectToOriginal = async (req, res) => {
+    console.log("yahi wala h")
     const { shortCode } = req.params;
-  
+    console.log(shortCode);
     try {
       // Try Redis first
       const cached = await redis.get(shortCode);
